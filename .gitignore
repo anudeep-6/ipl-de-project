@@ -1,0 +1,16 @@
+# Virtual environment
+.venv/
+
+# Raw data (large, and can be re-downloaded)
+data/raw/
+
+# Processed output
+data/processed/
+
+# Python clutter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Secrets
+.env

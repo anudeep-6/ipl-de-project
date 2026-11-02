@@ -40,8 +40,6 @@ for filename in os.listdir(raw_dir):
                 "winner_team_id": winner_team_id,
                 "result": result,
                 "eliminator_team_id": eliminator_team_id,
-                # A match can span several days (info["dates"]); use the first one.
-                "match_date": info["dates"][0],
                 "date_key": int(info["dates"][0].replace("-", ""))
             }
         match_rows.append(match_row)

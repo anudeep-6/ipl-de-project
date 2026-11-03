@@ -13,6 +13,7 @@ Columns:
   is_bowler_wicket  : the wicket is credited to the bowler (not run outs, retirements
                       or obstructing the field).
   *_id (players)    : registry codes, which identify a person better than a name.
+  batting_team_id   : the team batting in this innings (id from team_alias), looked up once per innings.
 
 Reconciliation checks at the end must all pass before the rows are used.
 """
@@ -20,6 +21,7 @@ Reconciliation checks at the end must all pass before the rows are used.
 import os
 import json
 from pathlib import Path
+from reference_data import team_alias
 
 raw_dir = Path(__file__).resolve().parent.parent / "data" / "raw"
 
@@ -28,6 +30,7 @@ raw_dir = Path(__file__).resolve().parent.parent / "data" / "raw"
 bowler_wickets = {"caught", "bowled", "lbw", "caught and bowled", "stumped", "hit wicket"}
 
 delivery_rows = []
+bad_batting_team = 0
 
 # sorted() makes the file order, and so the row order, the same on every run.
 for filename in sorted(os.listdir(raw_dir)):
@@ -37,10 +40,12 @@ for filename in sorted(os.listdir(raw_dir)):
         # The name -> code registry is per match, so it is loaded inside the file loop.
         people = data["info"]["registry"]["people"]
         match_id = filename.replace(".json", "")
+        match_team_ids = {team_alias.get(team.strip(), "UNMAPPED") for team in data["info"]["teams"]}
         innings_number = 0
         for innings in data["innings"]:
             innings_number += 1
             delivery_seq = 0
+            batting_team_id = team_alias.get(innings["team"].strip(), "UNMAPPED")
             for over in innings["overs"]:
                 for delivery in over["deliveries"]:
                     delivery_seq += 1
@@ -57,6 +62,9 @@ for filename in sorted(os.listdir(raw_dir)):
                     batter_id = people.get(delivery["batter"], "UNMAPPED")
                     bowler_id = people.get(delivery["bowler"], "UNMAPPED")
                     non_striker_id = people.get(delivery["non_striker"], "UNMAPPED")
+                    # it counts deliveries where the batting team is not one of the match’s two teams.
+                    if batting_team_id not in match_team_ids:
+                        bad_batting_team += 1
                     delivery_rows.append({
                         "match_id": match_id,
                         "innings_number": innings_number,
@@ -71,11 +79,13 @@ for filename in sorted(os.listdir(raw_dir)):
                         "batter_id": batter_id,
                         "bowler_id": bowler_id,
                         "non_striker_id": non_striker_id,
+                        "batting_team_id": batting_team_id
                     })
 
 # Reconciliation. Expected: 295,732 rows; 11,102 illegal (9,876 wides + 1,226 no-balls);
 # 0 rows where runs do not add up; 14,705 wickets, 13,482 of them credited to the bowler;
 # 0 UNMAPPED player ids.
+# 0 UNMAPPED batting_team_id; 0 rows with a batting team outside the match's two teams
 print("total rows", len(delivery_rows))
 print(delivery_rows[0])
 
@@ -83,6 +93,8 @@ illegal = 0
 bad_runs = 0
 wickets_count = 0
 bowler_wickets_count = 0
+batting_team_id_unmapped = 0
+
 for row in delivery_rows:
     if not row["is_legal_delivery"]:
         illegal += 1
@@ -92,10 +104,14 @@ for row in delivery_rows:
         wickets_count += 1
     if row["is_bowler_wicket"]:
         bowler_wickets_count += 1
+    if row["batting_team_id"] == "UNMAPPED":
+        batting_team_id_unmapped += 1
+
 print("illegal deliveries:", illegal)
 print("rows where batter + extras != total:", bad_runs)
 print("wickets_count:", wickets_count)
 print("bowler_wickets_count:", bowler_wickets_count)
+print("batting_team_id unmapped:", batting_team_id_unmapped)
 
 for column in ["batter_id", "bowler_id", "non_striker_id"]:
     bad = 0
@@ -103,3 +119,5 @@ for column in ["batter_id", "bowler_id", "non_striker_id"]:
         if row[column] == "UNMAPPED":
             bad += 1
     print(column, bad)
+
+print("bad_batting_team:", bad_batting_team)

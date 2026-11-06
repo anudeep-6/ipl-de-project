@@ -21,10 +21,13 @@ Columns:
                       from 0, so we add 1).
 
 Reconciliation checks at the end must all pass before the rows are used.
+The rows are then written to data\processed\fact_delivery.csv (booleans as
+True/False text, None as an empty field).
 """
 
 import os
 import json
+import csv
 from pathlib import Path
 from reference_data import team_alias
 
@@ -177,3 +180,18 @@ for column in ["batter_id", "bowler_id", "non_striker_id"]:
 print("bad_batting_team:", bad_batting_team)
 print("wides_count, noballs_count:", wides_count, noballs_count)
 print("wides + noballs == illegal:", wides_count + noballs_count == illegal)
+
+# Write fact_delivery to data\processed. Booleans are written as the text
+# True/False and None as an empty field (NULL on load).
+columns = ["match_id", "innings_number", "delivery_seq", "is_legal_delivery",
+           "runs_batter", "runs_extras", "runs_total", "is_wicket", "wicket_kind",
+           "is_bowler_wicket", "batter_id", "bowler_id", "non_striker_id",
+           "batting_team_id", "over_number", "player_out_id"]
+output_path = Path(__file__).resolve().parent.parent / "data" / "processed" / "fact_delivery.csv"
+output_path.parent.mkdir(parents=True, exist_ok=True)
+with open(output_path, "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(columns)
+    for row in delivery_rows:
+        writer.writerow([row[column] for column in columns])
+print("written to", output_path)

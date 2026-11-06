@@ -2,11 +2,13 @@
 
 Maps raw team, venue and season spellings to dimension ids through the alias
 tables in reference_data.py, then reconciles the result: every row must have a
-valid date_key and no "UNMAPPED" values.
+valid date_key and no "UNMAPPED" values. The rows are then written to
+data\processed\fact_match.csv (None becomes an empty field, read as NULL on load).
 """
 
 import os
 import json
+import csv
 from pathlib import Path
 from reference_data import venue_alias, team_alias, season_alias, dim_date
 
@@ -65,3 +67,15 @@ for column in check_columns:
     print(column, bad)
 print(match_rows[0])
 print("total rows", len(match_rows))
+
+# Write fact_match to data\processed. None becomes an empty field (NULL on load).
+columns = ["match_id", "season_id", "venue_id", "team1_id", "team2_id",
+           "winner_team_id", "result", "eliminator_team_id", "date_key"]
+output_path = Path(__file__).resolve().parent.parent / "data" / "processed" / "fact_match.csv"
+output_path.parent.mkdir(parents=True, exist_ok=True)
+with open(output_path, "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(columns)
+    for row in match_rows:
+        writer.writerow([row[column] for column in columns])
+print("written to", output_path)

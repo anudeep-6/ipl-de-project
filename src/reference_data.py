@@ -9,10 +9,17 @@ Each dimension has two parts:
 
 Lookups use alias.get(raw_value.strip(), "UNMAPPED"). A spelling that is not in
 an alias table is flagged as "UNMAPPED" for review, never guessed or auto-created.
-Reconciliation scripts: read_venues.py, read_teams.py, read_seasons.py, read_matches.py.
+Reconciliation scripts: read_venues.py, read_teams.py, read_seasons.py,
+read_matches.py, read_deliveries.py, read_fielders.py.
+
+Run directly (python src\reference_data.py) to write the 7 dim/alias CSVs
+(dim_venue, dim_team, dim_season, dim_date, venue_alias, team_alias,
+season_alias) to data\processed.
 """
 
+import csv
 from datetime import datetime, timedelta
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Venues: 36 stadiums, 60 raw spellings
@@ -228,3 +235,68 @@ while day <= end:
     }
     dim_date.append(row)
     day = day + timedelta(days=1)
+
+# Runs only when this file is run directly, not when another script imports it
+# (read_matches.py etc.), so importing never rewrites the CSVs.
+# The CSVs go to data\processed, which git ignores.
+if __name__ == "__main__":
+    processed_dir = Path(__file__).resolve().parent.parent / "data" / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(processed_dir / "dim_venue.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["venue_id", "venue_name"])
+        for venue_id, venue_name in dim_venue.items():
+            writer.writerow([venue_id, venue_name])
+
+    print("dim_venue.csv written:", len(dim_venue), "rows")
+
+    with open(processed_dir / "dim_team.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["team_id", "team_name"])
+        for team_id, team_name in dim_team.items():
+            writer.writerow([team_id, team_name])
+
+    print("dim_team.csv written:", len(dim_team), "rows")
+
+    with open(processed_dir / "dim_season.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["season_id", "season_year"])
+        for season_id, season_year in dim_season.items():
+            writer.writerow([season_id, season_year])
+
+    print("dim_season.csv written:", len(dim_season), "rows")
+
+    date_columns = ["date_key", "full_date", "year", "month", "day", "weekday_name", "is_weekend"]
+
+    with open(processed_dir / "dim_date.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(date_columns)
+        for row in dim_date:
+            writer.writerow([row[column] for column in date_columns])
+
+    print("dim_date.csv written:", len(dim_date), "rows")
+
+    with open(processed_dir / "venue_alias.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["venue_spelling", "venue_id"])
+        for venue_spelling, venue_id in venue_alias.items():
+            writer.writerow([venue_spelling, venue_id])
+
+    print("venue_alias.csv written:", len(venue_alias), "rows")
+
+    with open(processed_dir / "team_alias.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["team_spelling", "team_id"])
+        for team_spelling, team_id in team_alias.items():
+            writer.writerow([team_spelling, team_id])
+
+    print("team_alias.csv written:", len(team_alias), "rows")
+
+    with open(processed_dir / "season_alias.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["season_label", "season_id"])
+        for season_label, season_id in season_alias.items():
+            writer.writerow([season_label, season_id])
+
+    print("season_alias.csv written:", len(season_alias), "rows")

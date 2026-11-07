@@ -12,9 +12,9 @@ an alias table is flagged as "UNMAPPED" for review, never guessed or auto-create
 Reconciliation scripts: read_venues.py, read_teams.py, read_seasons.py,
 read_matches.py, read_deliveries.py, read_fielders.py.
 
-Run directly (python src\reference_data.py) to write the 7 dim/alias CSVs
+Run directly (python src/reference_data.py) to write the 7 dim/alias CSVs
 (dim_venue, dim_team, dim_season, dim_date, venue_alias, team_alias,
-season_alias) to data\processed.
+season_alias) to data/processed.
 """
 
 import csv

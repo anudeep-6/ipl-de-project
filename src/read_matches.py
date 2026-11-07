@@ -3,7 +3,7 @@
 Maps raw team, venue and season spellings to dimension ids through the alias
 tables in reference_data.py, then reconciles the result: every row must have a
 valid date_key and no "UNMAPPED" values. The rows are then written to
-data\processed\fact_match.csv (None becomes an empty field, read as NULL on load).
+data/processed/fact_match.csv (None becomes an empty field, read as NULL on load).
 """
 
 import os

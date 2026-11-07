@@ -21,7 +21,7 @@ Columns:
                       from 0, so we add 1).
 
 Reconciliation checks at the end must all pass before the rows are used.
-The rows are then written to data\processed\fact_delivery.csv (booleans as
+The rows are then written to data/processed/fact_delivery.csv (booleans as
 True/False text, None as an empty field).
 """
 
